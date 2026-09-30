@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Course Management – Relational Schema</title>
+<style>
+  :root{
+    --paper:#f3f6fa;
+    --card:#ffffff;
+    --ink:#14213d;
+    --muted:#5b6b85;
+    --line:#c9d3e2;
+    --pk:#b45309;
+    --pk-bg:#fdf1dc;
+    --fk:#0f766e;
+    --fk-bg:#dcf3f0;
+    --head:#14213d;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6;
+    background-image:
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:32px 32px;
+    background-attachment:fixed;
+  }
+  body::before{content:"";position:fixed;inset:0;background:rgba(243,246,250,.88);z-index:-1}
+  header{padding:48px 20px 24px;max-width:1000px;margin:auto}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.15;margin:0 0 10px;font-weight:700}
+  header p{margin:0;color:var(--muted);max-width:60ch}
+  nav{max-width:1000px;margin:0 auto;padding:0 20px 8px;display:flex;flex-wrap:wrap;gap:8px}
+  nav a{color:var(--ink);text-decoration:none;font-size:.9rem;border:1px solid var(--line);background:var(--card);padding:6px 12px;border-radius:4px}
+  nav a:hover,nav a:focus-visible{border-color:var(--ink);outline:none}
+  main{max-width:1000px;margin:auto;padding:8px 20px 60px}
+  section{margin-top:40px}
+  h2{font-family:Georgia,serif;font-size:1.5rem;margin:0 0 6px}
+  .lede{color:var(--muted);margin:0 0 16px;max-width:65ch}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;margin:0 0 14px}
+  .tag{display:inline-block;padding:1px 8px;border-radius:3px;font-size:.75rem;font-weight:600;border:1px solid}
+  .tag.pk{background:var(--pk-bg);color:var(--pk);border-color:var(--pk)}
+  .tag.fk{background:var(--fk-bg);color:var(--fk);border-color:var(--fk)}
+
+  .rel{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:26px}
+  .rel-title{background:var(--head);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+  .rel-title h3{margin:0;font-size:1.1rem;letter-spacing:.02em}
+  .rel-title span{font-size:.85rem;opacity:.8}
+  .schema-line{padding:10px 16px;border-bottom:1px solid var(--line);font-family:Consolas,Menlo,monospace;font-size:.88rem;overflow-x:auto;white-space:nowrap}
+  .schema-line u{text-decoration-thickness:2px;text-underline-offset:3px;font-weight:700}
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:.92rem}
+  th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:#eaf0f8;font-weight:700}
+  th.pk{background:var(--pk-bg);color:var(--pk)}
+  th.fk{background:var(--fk-bg);color:var(--fk)}
+  td.pk{background:#fffaf0;font-weight:600}
+  td.fk{background:#f2fbfa}
+  tr:last-child td{border-bottom:0}
+  .note{padding:10px 16px;font-size:.88rem;color:var(--muted);border-top:1px solid var(--line);background:#fafbfd}
+
+  .attr-table th{width:26%}
+  .diagram{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;overflow-x:auto}
+  .diagram svg{display:block;margin:auto;min-width:640px;width:100%;height:auto}
+
+  .concepts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .concept{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--ink);padding:14px 16px;border-radius:4px}
+  .concept h4{margin:0 0 4px;font-size:1rem}
+  .concept p{margin:0;font-size:.92rem;color:var(--muted)}
+
+  .readme{background:#0f1a30;color:#e6edf8;border-radius:6px;position:relative}
+  .readme pre{margin:0;padding:20px;overflow-x:auto;font-family:Consolas,Menlo,monospace;font-size:.82rem;line-height:1.55;white-space:pre-wrap}
+  button{font:inherit;cursor:pointer}
+  .copy{position:absolute;top:10px;right:10px;background:#fff;color:var(--ink);border:0;border-radius:4px;padding:6px 12px;font-size:.82rem;font-weight:600}
+  .copy:focus-visible,.shot:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+  .shot{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:4px;padding:3px 10px;font-size:.78rem}
+  footer{text-align:center;color:var(--muted);font-size:.85rem;padding:0 20px 40px}
+
+  @media print{
+    body{background:#fff}body::before{display:none}
+    nav,.copy{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Student Course Management<br>Relational Schema Design</h1>
+  <p>A relational schema with three relations: STUDENT, COURSE and ENROLLMENT. ENROLLMENT links students to the courses they register for.</p>
+</header>
+
+<nav aria-label="Sections">
+  <a href="#relations">Relations</a>
+  <a href="#student">Student</a>
+  <a href="#course">Course</a>
+  <a href="#enrollment">Enrollment</a>
+  <a href="#relationship">Relationship</a>
+  <a href="#final">Final design</a>
+  <a href="#readme">README</a>
+</nav>
+
+<main>
+
+<!-- 1. RELATIONS -->
+<section id="relations">
+  <h2>1. Relations, attributes and keys</h2>
+  <p class="lede">The three relations, their attributes and primary keys. ENROLLMENT holds two foreign keys that refer to the other relations.</p>
+  <div class="legend">
+    <span><span class="tag pk">PK</span> Primary key</span>
+    <span><span class="tag fk">FK</span> Foreign key</span>
+  </div>
+  <div class="rel">
+    <div class="scroll">
+    <table class="attr-table">
+      <thead><tr><th>Relation</th><th>Attributes</th><th>Primary key</th><th>Foreign key(s)</th></tr></thead>
+      <tbody>
+        <tr><td><b>STUDENT</b></td><td>Student_ID, Student_Name, Email, Department</td><td class="pk">Student_ID</td><td>None</td></tr>
+        <tr><td><b>COURSE</b></td><td>Course_ID, Course_Name, Trainer_Name, Duration</td><td class="pk">Course_ID</td><td>None</td></tr>
+        <tr><td><b>ENROLLMENT</b></td><td>Enrollment_ID, Student_ID, Course_ID, Enrollment_Date</td><td class="pk">Enrollment_ID</td><td class="fk">Student_ID → STUDENT<br>Course_ID → COURSE</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- 2. STUDENT -->
+<section id="student">
+  <h2>2. STUDENT relation</h2>
+  <div class="rel" id="student_relation">
+    <div class="rel-title"><h3>STUDENT</h3><span>5 tuples</span></div>
+    <div class="schema-line">STUDENT(<u>Student_ID</u>, Student_Name, Email, Department)</div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th class="pk">Student_ID (PK)</th><th>Student_Name</th><th>Email</th><th>Department</th></tr></thead>
+      <tbody>
+        <tr><td class="pk">101</td><td>Ravi Kumar</td><td>ravi.kumar@example.com</td><td>Computer Science</td></tr>
+        <tr><td class="pk">102</td><td>Anjali Sharma</td><td>anjali.sharma@example.com</td><td>Information Technology</td></tr>
+        <tr><td class="pk">103</td><td>Suresh Reddy</td><td>suresh.reddy@example.com</td><td>Electronics</td></tr>
+        <tr><td class="pk">104</td><td>Priya Nair</td><td>priya.nair@example.com</td><td>Computer Science</td></tr>
+        <tr><td class="pk">105</td><td>Arjun Mehta</td><td>arjun.mehta@example.com</td><td>Mechanical</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="note">Student_ID uniquely identifies each student, so it is the primary key.</div>
+  </div>
+</section>
+
+<!-- 3. COURSE -->
+<section id="course">
+  <h2>3. COURSE relation</h2>
+  <div class="rel" id="course_relation">
+    <div class="rel-title"><h3>COURSE</h3><span>3 tuples</span></div>
+    <div class="schema-line">COURSE(<u>Course_ID</u>, Course_Name, Trainer_Name, Duration)</div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th class="pk">Course_ID (PK)</th><th>Course_Name</th><th>Trainer_Name</th><th>Duration</th></tr></thead>
+      <tbody>
+        <tr><td class="pk">C01</td><td>Full Stack Development</td><td>Mahesh Pelluri</td><td>6 Months</td></tr>
+        <tr><td class="pk">C02</td><td>Java Programming</td><td>Kavitha Rao</td><td>3 Months</td></tr>
+        <tr><td class="pk">C03</td><td>Database Management</td><td>Rahul Verma</td><td>2 Months</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="note">Course_ID uniquely identifies each course, so it is the primary key.</div>
+  </div>
+</section>
+
+<!-- 4. ENROLLMENT -->
+<section id="enrollment">
+  <h2>4. ENROLLMENT relation</h2>
+  <div class="rel" id="enrollment_relation">
+    <div class="rel-title"><h3>ENROLLMENT</h3><span>5 tuples</span></div>
+    <div class="schema-line">ENROLLMENT(<u>Enrollment_ID</u>, Student_ID, Course_ID, Enrollment_Date)</div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th class="pk">Enrollment_ID (PK)</th><th class="fk">Student_ID (FK)</th><th class="fk">Course_ID (FK)</th><th>Enrollment_Date</th></tr></thead>
+      <tbody>
+        <tr><td class="pk">E001</td><td class="fk">101</td><td class="fk">C01</td><td>2026-01-10</td></tr>
+        <tr><td class="pk">E002</td><td class="fk">102</td><td class="fk">C02</td><td>2026-01-12</td></tr>
+        <tr><td class="pk">E003</td><td class="fk">103</td><td class="fk">C03</td><td>2026-01-15</td></tr>
+        <tr><td class="pk">E004</td><td class="fk">101</td><td class="fk">C02</td><td>2026-01-18</td></tr>
+        <tr><td class="pk">E005</td><td class="fk">104</td><td class="fk">C01</td><td>2026-01-20</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="note">
+      Student_ID refers to STUDENT(Student_ID). Course_ID refers to COURSE(Course_ID).
+      Every value in these two columns matches an existing row in the parent relation.
+    </div>
+  </div>
+</section>
+
+<!-- 5. RELATIONSHIP -->
+<section id="relationship">
+  <h2>5. Relationship between Student and Course through Enrollment</h2>
+  <p class="lede">One student can enroll in many courses, and one course can have many students. That is a many-to-many relationship, which ENROLLMENT resolves into two one-to-many relationships.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 760 210" role="img" aria-label="STUDENT one-to-many ENROLLMENT many-to-one COURSE">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#14213d"/></marker>
+      </defs>
+      <!-- STUDENT -->
+      <rect x="10" y="30" width="200" height="150" rx="4" fill="#fff" stroke="#14213d" stroke-width="2"/>
+      <rect x="10" y="30" width="200" height="30" fill="#14213d"/>
+      <text x="110" y="51" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Segoe UI,Arial">STUDENT</text>
+      <text x="24" y="86" font-size="13" font-weight="700" fill="#b45309" font-family="Consolas,monospace">Student_ID (PK)</text>
+      <text x="24" y="110" font-size="13" fill="#14213d" font-family="Consolas,monospace">Student_Name</text>
+      <text x="24" y="134" font-size="13" fill="#14213d" font-family="Consolas,monospace">Email</text>
+      <text x="24" y="158" font-size="13" fill="#14213d" font-family="Consolas,monospace">Department</text>
+      <!-- ENROLLMENT -->
+      <rect x="280" y="30" width="200" height="150" rx="4" fill="#fff" stroke="#14213d" stroke-width="2"/>
+      <rect x="280" y="30" width="200" height="30" fill="#14213d"/>
+      <text x="380" y="51" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Segoe UI,Arial">ENROLLMENT</text>
+      <text x="294" y="86" font-size="13" font-weight="700" fill="#b45309" font-family="Consolas,monospace">Enrollment_ID (PK)</text>
+      <text x="294" y="110" font-size="13" font-weight="700" fill="#0f766e" font-family="Consolas,monospace">Student_ID (FK)</text>
+      <text x="294" y="134" font-size="13" font-weight="700" fill="#0f766e" font-family="Consolas,monospace">Course_ID (FK)</text>
+      <text x="294" y="158" font-size="13" fill="#14213d" font-family="Consolas,monospace">Enrollment_Date</text>
+      <!-- COURSE -->
+      <rect x="550" y="30" width="200" height="150" rx="4" fill="#fff" stroke="#14213d" stroke-width="2"/>
+      <rect x="550" y="30" width="200" height="30" fill="#14213d"/>
+      <text x="650" y="51" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Segoe UI,Arial">COURSE</text>
+      <text x="564" y="86" font-size="13" font-weight="700" fill="#b45309" font-family="Consolas,monospace">Course_ID (PK)</text>
+      <text x="564" y="110" font-size="13" fill="#14213d" font-family="Consolas,monospace">Course_Name</text>
+      <text x="564" y="134" font-size="13" fill="#14213d" font-family="Consolas,monospace">Trainer_Name</text>
+      <text x="564" y="158" font-size="13" fill="#14213d" font-family="Consolas,monospace">Duration</text>
+      <!-- links -->
+      <line x1="210" y1="105" x2="278" y2="105" stroke="#14213d" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="550" y1="105" x2="482" y2="105" stroke="#14213d" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="244" y="97" text-anchor="middle" font-size="12" fill="#5b6b85" font-family="Segoe UI,Arial">1 : M</text>
+      <text x="516" y="97" text-anchor="middle" font-size="12" fill="#5b6b85" font-family="Segoe UI,Arial">1 : M</text>
+      <text x="380" y="202" text-anchor="middle" font-size="12" fill="#5b6b85" font-family="Segoe UI,Arial">STUDENT and COURSE have a many-to-many relationship through ENROLLMENT</text>
+    </svg>
+  </div>
+  <div class="rel" style="margin-top:18px">
+    <div class="scroll">
+    <table>
+      <thead><tr><th>ENROLLMENT attribute</th><th>Refers to</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="fk">Student_ID</td><td>STUDENT.Student_ID</td><td>Which student registered</td></tr>
+        <tr><td class="fk">Course_ID</td><td>COURSE.Course_ID</td><td>Which course the student registered for</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- 6. FINAL DESIGN -->
+<section id="final">
+  <h2>6. Final database design</h2>
+  <div class="rel">
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Relation</th><th>Attribute</th><th>Key</th><th>Sample tuples</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="4"><b>STUDENT</b></td><td>Student_ID</td><td class="pk">Primary key</td><td rowspan="4">5</td></tr>
+        <tr><td>Student_Name</td><td>-</td></tr>
+        <tr><td>Email</td><td>-</td></tr>
+        <tr><td>Department</td><td>-</td></tr>
+        <tr><td rowspan="4"><b>COURSE</b></td><td>Course_ID</td><td class="pk">Primary key</td><td rowspan="4">3</td></tr>
+        <tr><td>Course_Name</td><td>-</td></tr>
+        <tr><td>Trainer_Name</td><td>-</td></tr>
+        <tr><td>Duration</td><td>-</td></tr>
+        <tr><td rowspan="4"><b>ENROLLMENT</b></td><td>Enrollment_ID</td><td class="pk">Primary key</td><td rowspan="4">5</td></tr>
+        <tr><td>Student_ID</td><td class="fk">Foreign key → STUDENT</td></tr>
+        <tr><td>Course_ID</td><td class="fk">Foreign key → COURSE</td></tr>
+        <tr><td>Enrollment_Date</td><td>-</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- 7. CONCEPTS -->
+<section id="concepts">
+  <h2>7. Key concepts</h2>
+  <div class="concepts">
+    <div class="concept"><h4>Relation</h4><p>A table that stores data about one kind of thing, made of rows and columns. Example: STUDENT.</p></div>
+    <div class="concept"><h4>Attribute</h4><p>A column of a relation that describes one property. Example: Email in STUDENT.</p></div>
+    <div class="concept"><h4>Tuple</h4><p>A single row of a relation. Example: (101, Ravi Kumar, ravi.kumar@example.com, Computer Science).</p></div>
+    <div class="concept"><h4>Relational schema</h4><p>The blueprint of the database: relation names, their attributes and keys, without the data.</p></div>
+  </div>
+</section>
+
+<!-- 8. README -->
+<section id="readme">
+  <h2>8. README.md</h2>
+  <p class="lede">Copy this into the README.md file of the <b>student-course-schema</b> repository.</p>
+  <div class="readme">
+    <button class="copy" id="copyBtn" type="button">Copy README</button>
+<pre id="readmeText"># Student Course Management - Relational Schema
+
+A relational database schema design for a Student Course Management System.
+It stores information about students, courses and student course registrations.
+
+## Relations
+
+| Relation   | Attributes                                          | Primary Key   |
+|------------|-----------------------------------------------------|---------------|
+| STUDENT    | Student_ID, Student_Name, Email, Department         | Student_ID    |
+| COURSE     | Course_ID, Course_Name, Trainer_Name, Duration      | Course_ID     |
+| ENROLLMENT | Enrollment_ID, Student_ID, Course_ID, Enrollment_Date | Enrollment_ID |
+
+## What is a relation?
+A relation is a table that stores data about one kind of entity. It is made of rows and columns.
+
+## What is an attribute?
+An attribute is a column of a relation. It describes one property of the entity, such as Email.
+
+## What is a tuple?
+A tuple is a single row in a relation. It holds one complete record, such as one student.
+
+## What is a relational schema?
+A relational schema is the structure of the database. It lists the relation names, their attributes and their primary keys.
+
+## Primary key used in each relation
+- STUDENT: Student_ID
+- COURSE: Course_ID
+- ENROLLMENT: Enrollment_ID
+
+## Foreign keys in ENROLLMENT
+- Student_ID refers to STUDENT(Student_ID)
+- Course_ID refers to COURSE(Course_ID)
+
+## Relationship
+One student can enroll in many courses, and one course can have many students.
+ENROLLMENT connects STUDENT and COURSE and turns this many-to-many
+relationship into two one-to-many relationships.
+
+## Sample Data
+
+### STUDENT
+| Student_ID | Student_Name  | Email                    | Department             |
+|------------|---------------|--------------------------|------------------------|
+| 101        | Ravi Kumar    | ravi.kumar@example.com   | Computer Science       |
+| 102        | Anjali Sharma | anjali.sharma@example.com| Information Technology |
+| 103        | Suresh Reddy  | suresh.reddy@example.com | Electronics            |
+| 104        | Priya Nair    | priya.nair@example.com   | Computer Science       |
+| 105        | Arjun Mehta   | arjun.mehta@example.com  | Mechanical             |
+
+### COURSE
+| Course_ID | Course_Name            | Trainer_Name   | Duration |
+|-----------|------------------------|----------------|----------|
+| C01       | Full Stack Development | Mahesh Pelluri | 6 Months |
+| C02       | Java Programming       | Kavitha Rao    | 3 Months |
+| C03       | Database Management    | Rahul Verma    | 2 Months |
+
+### ENROLLMENT
+| Enrollment_ID | Student_ID | Course_ID | Enrollment_Date |
+|---------------|------------|-----------|-----------------|
+| E001          | 101        | C01       | 2026-01-10      |
+| E002          | 102        | C02       | 2026-01-12      |
+| E003          | 103        | C03       | 2026-01-15      |
+| E004          | 101        | C02       | 2026-01-18      |
+| E005          | 104        | C01       | 2026-01-20      |
+
+## Project Structure
+student-course-schema/
+├── README.md
+├── student_relation.png
+├── course_relation.png
+└── enrollment_relation.png
+</pre>
+  </div>
+</section>
+
+</main>
+
+<footer>Student Course Management – Relational Schema Design</footer>
+
+<script>
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    var btn = this;
+    var text = document.getElementById('readmeText').textContent;
+    function done(){ btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy README'; }, 1500); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      var r = document.createRange(); r.selectNodeContents(document.getElementById('readmeText'));
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand('copy'); done(); } catch(e) {}
+    }
+  });
+</script>
+</body>
+</html>
